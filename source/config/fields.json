@@ -1,0 +1,73 @@
+{
+  "version": "1.0.0",
+  "description": "字段白名单：只有这里声明的字段允许出现在请求参数里；output_fields 是允许出现在结果集里的列名。",
+  "fields": [
+    {
+      "name": "date_from",
+      "type": "date",
+      "description": "统计起始日期（含），ISO 8601 的 YYYY-MM-DD",
+      "minimum": "2024-01-01",
+      "maximum": "2025-12-31",
+      "max_length": 10
+    },
+    {
+      "name": "date_to",
+      "type": "date",
+      "description": "统计结束日期（含），必须不早于 date_from",
+      "minimum": "2024-01-01",
+      "maximum": "2025-12-31",
+      "max_length": 10
+    },
+    {
+      "name": "region",
+      "type": "string",
+      "description": "销售大区（枚举）",
+      "enum": ["华东", "华南", "华北", "西南"],
+      "max_length": 8
+    },
+    {
+      "name": "channel",
+      "type": "string",
+      "description": "销售渠道（枚举）",
+      "enum": ["online", "retail", "partner", "wholesale"],
+      "max_length": 16
+    },
+    {
+      "name": "category",
+      "type": "string",
+      "description": "商品品类（枚举，保留字段：当前模板未开放，作为全局白名单与模板白名单差异的对照）",
+      "enum": ["电子", "家居", "服饰", "食品"],
+      "max_length": 8
+    },
+    {
+      "name": "segment",
+      "type": "string",
+      "description": "客户分层（枚举，保留字段：当前模板未开放）",
+      "enum": ["enterprise", "smb", "consumer"],
+      "max_length": 16
+    },
+    {
+      "name": "limit",
+      "type": "integer",
+      "description": "返回行数上限；不得超过模板上限与全局硬上限（limits.json 的 max_rows_hard）",
+      "minimum": 1,
+      "maximum_ref": "max_rows_hard"
+    }
+  ],
+  "output_fields": [
+    "sale_id",
+    "date_iso",
+    "region",
+    "channel",
+    "category",
+    "product_name",
+    "segment",
+    "orders",
+    "revenue",
+    "share_pct",
+    "units",
+    "quantity",
+    "amount",
+    "pairs"
+  ]
+}

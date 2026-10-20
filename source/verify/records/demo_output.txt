@@ -1,0 +1,126 @@
+# 结构化数据与实时接口 · 一键复跑演示（ClawHunt #1520）
+Python 3.13.9 | 仅标准库 | 零第三方依赖
+配置目录：D:\works\clawhunt-agent\deliverables\1520-structured-data-api\config
+数据源：临时 sqlite 星型模型（合成数据，4000 条销售明细，6 个视图）
+加载：契约 1.0.0 | 模板 8 个（对外 7）| 视图 6 个 | 字段 7 个 | 硬上限 200 行
+时钟：deterministic（2026-01-05T09:00:00Z 起，每次请求步进 1s）
+
+==============================================================================
+1. 三层只读防线（逐层单独取证）
+==============================================================================
+
+1.1 第一层-a：只读连接 file:...?mode=ro（SQLite 文件层面就没有写权限）
+  INSERT  blocked=true  E_DB_READONLY: attempt to write a readonly database
+  UPDATE  blocked=true  E_DB_READONLY: attempt to write a readonly database
+  DELETE  blocked=true  E_DB_READONLY: attempt to write a readonly database
+  DROP    blocked=true  E_DB_READONLY: attempt to write a readonly database
+
+1.2 第一层-b：可写连接先执行 PRAGMA query_only=ON，再尝试写入
+  INSERT  blocked=true  E_DB_READONLY: attempt to write a readonly database
+
+1.3 第一层-c：可写连接 + sqlite3 set_authorizer 回调（非 SELECT 动作在 prepare 阶段被拒）
+  INSERT  blocked=true  E_SQL_AUTHORIZER: not authorized（被拒动作 SQLITE_INSERT）
+  UPDATE  blocked=true  E_SQL_AUTHORIZER: not authorized（被拒动作 SQLITE_UPDATE）
+  DELETE  blocked=true  E_SQL_AUTHORIZER: not authorized（被拒动作 SQLITE_DELETE）
+  DROP    blocked=true  E_SQL_AUTHORIZER: not authorized（被拒动作 SQLITE_DELETE）
+  事实表行数不变：4000 行（写操作一条都没落地）
+
+1.4 第二层：语句白名单（解析层，未连接数据库即可判定）
+  允许  SELECT region, SUM(orders) AS orders FROM v_sales_daily    允许：first_keyword=SELECT views=v_sales_daily
+  允许  WITH t AS (SELECT region, SUM(revenue_cents) AS r FROM v   允许：first_keyword=WITH views=v_sales_daily,t
+  拒绝  DELETE FROM fact_sales                                     E_SQL_NOT_ALLOWED: 语句必须以 SELECT 或 WITH 开头，实际首关键字是 DELETE
+  拒绝  DROP TABLE fact_sales                                      E_SQL_NOT_ALLOWED: 语句必须以 SELECT 或 WITH 开头，实际首关键字是 DROP
+  拒绝  PRAGMA table_info(fact_sales)                              E_SQL_NOT_ALLOWED: 语句必须以 SELECT 或 WITH 开头，实际首关键字是 PRAGMA
+  拒绝  SELECT 1; DELETE FROM fact_sales                           E_SQL_MULTI_STATEMENT: 检测到 2 条语句，一条请求只允许一条只读语句
+  拒绝  SELECT * FROM fact_sales -- 注释注入                           E_SQL_COMMENT: 语句中不允许出现注释（-- 注释注入），拒绝执行
+  拒绝  SELECT * FROM secret_salary_table                          E_VIEW_NOT_ALLOWED: 语句引用了白名单之外的视图/表：secret_salary_table；允许：v_category_revenue, v_channel_daily, v_product_rank, v_sales_daily, v_sales_enriched, v_segment_summary
+
+1.5 第三层：行数与超时上限
+  行数上限 5：返回 5 行，truncated=true（明细查询本身不写 LIMIT）
+  行数超限：拒绝 E_ROW_LIMIT（参数 limit=100000 超过上限 100（模板 sales_line_sample 上限 100 行，全局硬上限 200 行））
+  超时上限 150ms：blocked=true，连接仍可用=true（E_TIMEOUT: 查询超过时间上限，被中断（progress handler））
+
+  取证条目：L1=9  L2=8  L3=3  合计=20
+  L1 全部拒写：True
+
+==============================================================================
+2. 参数校验与调用结果（samples/queries.jsonl）
+==============================================================================
+
+  样例     模板                       结果/错误码                    行数    说明
+  ----------------------------------------------------------------------------------------
+  Q-001  sales_by_region          200                       4     按地区汇总，默认 limit=20
+  Q-002  sales_by_region          200                       1     枚举过滤：region=华东
+  Q-003  daily_revenue            200                       5     按日趋势，limit 截到 5 天
+  Q-004  category_share           200                       4     品类占比，含子查询分母
+  Q-005  channel_matrix           200                       4     地区 x 渠道矩阵，limit=4
+  Q-006  segment_summary          200                       3     客户分层汇总
+  Q-007  top_products             200                       5     畅销商品榜 top5
+  Q-008  sales_line_sample        200                       5     明细查询不写 SQL LIMIT，由第三层截断并标记 truncated
+  Q-009  sales_by_region          200                       4     全区间（两年）聚合
+  Q-010  sales_by_region          200                       1     地区 + 渠道双过滤
+  Q-011  sales_all_raw            E_TEMPLATE_UNKNOWN        -     查询模板 'sales_all_raw' 不存在；可用模板：benchm
+  Q-012  sales_by_region          E_PARAM_UNKNOWN           -     参数 'customer_email' 不在全局字段白名单内；允许：ca
+  Q-013  daily_revenue            E_PARAM_NOT_IN_TEMPLATE   -     参数 'region' 不在模板 daily_revenue 的允许字段
+  Q-014  sales_by_region          E_PARAM_INJECTION         -     参数 region 包含注入特征（分号（多语句拼接）），已拒绝；值：华东
+  Q-015  sales_by_region          E_PARAM_INJECTION         -     参数 region 包含注入特征（单行注释），已拒绝；值：华东--
+  Q-016  sales_by_region          E_PARAM_INJECTION         -     参数 region 包含注入特征（分号（多语句拼接）），已拒绝；值：华东
+  Q-017  sales_by_region          E_PARAM_ENUM              -     参数 region=火星 不在枚举白名单内：华东, 华南, 华北, 西南
+  Q-018  sales_by_region          E_PARAM_RANGE             -     date_from=2025-06-01 晚于 date_to=2025
+  Q-019  sales_by_region          E_PARAM_RANGE             -     参数 date_from=2023-01-01 早于允许范围下限 202
+  Q-020  sales_line_sample        E_ROW_LIMIT               -     参数 limit=100000 超过上限 100（模板 sales_li
+  Q-021  sales_by_region          E_PARAM_TYPE              -     参数 limit 期望整数，实际是 str（布尔值不算整数）
+  Q-022  sales_by_region          E_PARAM_TYPE              -     参数 limit 期望整数，实际是 bool（布尔值不算整数）
+  Q-023  sales_by_region          E_PARAM_MISSING           -     缺少必填参数 date_from（模板 sales_by_region）
+  Q-024  sales_by_region          E_PARAM_LENGTH            -     参数 region 长度 68 超过上限 8
+  Q-025  sales_by_region          E_PARAM_TYPE              -     参数 date_from 必须是 YYYY-MM-DD 格式的日期，实际
+  Q-026  sales_by_region          E_PARAM_UNKNOWN           -     请求包含未定义的键 sql；只允许 template, params, 
+  Q-027  (raw sql)                E_SQL_NOT_ALLOWED         -     语句必须以 SELECT 或 WITH 开头，实际首关键字是 DELET
+  Q-028  (raw sql)                E_SQL_NOT_ALLOWED         -     语句必须以 SELECT 或 WITH 开头，实际首关键字是 DROP
+  Q-029  (raw sql)                E_SQL_MULTI_STATEMENT     -     检测到 2 条语句，一条请求只允许一条只读语句
+  Q-030  (raw sql)                E_SQL_COMMENT             -     语句中不允许出现注释（-- 注释绕过），拒绝执行
+  Q-031  (raw sql)                E_VIEW_NOT_ALLOWED        -     语句引用了白名单之外的视图/表：secret_salary_table；
+  Q-032  (authorizer)             E_SQL_AUTHORIZER          -     E_SQL_AUTHORIZER: not authorized（被拒动
+  Q-033  (authorizer)             E_SQL_AUTHORIZER          -     E_SQL_AUTHORIZER: not authorized（被拒动
+  Q-034  (authorizer)             E_SQL_AUTHORIZER          -     E_SQL_AUTHORIZER: not authorized（被拒动
+  Q-035  (authorizer)             E_SQL_AUTHORIZER          -     E_SQL_AUTHORIZER: not authorized（被拒动
+
+  合计 35 条：合法 10 条，拒绝 25 条，期望不符 0 条
+
+==============================================================================
+3. 实时只读 HTTP 接口（GET + 令牌 + scope + 限流 + 审计）
+==============================================================================
+
+  服务：127.0.0.1:<临时端口>（后台线程，仅绑定回环地址）
+  只读方法白名单：GET
+
+  健康检查（免鉴权）                  GET   -> 200  keys=4
+  字段白名单                      GET   -> 200  items=7
+  模板列表                       GET   -> 200  items=7
+  有效查询                       GET   -> 200  rows=4 truncated=false
+  明细截断（limit=5）              GET   -> 200  rows=5 truncated=true
+  缺少令牌                       GET   -> 401 [E_AUTH_MISSING_TOKEN]
+  令牌无效                       GET   -> 401 [E_AUTH_INVALID_TOKEN]
+  方法不允许（POST）                POST  -> 405 [E_METHOD_NOT_ALLOWED]
+  scope 不足（audit-only 查数）    GET   -> 403 [E_SCOPE_DENIED]
+  审计尾部                       GET   -> 200  items=2
+  注入式参数                      GET   -> 400 [E_PARAM_INJECTION]
+  越过模板字段                     GET   -> 400 [E_PARAM_NOT_IN_TEMPLATE]
+  未知路径                       GET   -> 404 [E_NOT_FOUND]
+  限流（5 次/60s 令牌）             GET   -> 5x200, 1x429（Retry-After=55s）
+
+  审计条目累计：46 条（成功 21 / 拒绝 25）
+
+==============================================================================
+4. 产物清单
+==============================================================================
+
+  contract_openapi.json       28721 bytes  OpenAPI 3.0.3 契约，7 个路径
+  query_results.jsonl          5594 bytes  合法查询的真实结果 10 条
+  rejected_requests.jsonl      8384 bytes  被拒请求 + 错误码 + 原因 25 条
+  audit_log.jsonl             20557 bytes  审计日志 46 条（含 HTTP 与本地调用）
+  layer_evidence.jsonl         6796 bytes  三层防线取证 20 条
+  http_calls.jsonl             2844 bytes  HTTP 调用明细 14 条
+
+结论：三层防线各自独立可复现（L1=9 / L2=8 / L3=3 条证据）；参数校验命中 25 条；HTTP 全部请求留审计。
+

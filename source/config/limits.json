@@ -1,0 +1,31 @@
+{
+  "version": "1.0.0",
+  "description": "资源上限与运行时限制。行数、超时、限流都从这里读，代码不写死。",
+  "max_rows_hard": 200,
+  "default_rows": 20,
+  "max_param_length": 64,
+  "max_params": 8,
+  "max_url_length": 2048,
+  "query_timeout_ms": 800,
+  "benchmark_timeout_ms": 150,
+  "rate_limit": {
+    "limit": 60,
+    "window_seconds": 60,
+    "key": "token",
+    "on_exceed": "reject_with_retry_after"
+  },
+  "audit": {
+    "enabled": true,
+    "max_entries": 5000,
+    "log_allowed_params": true,
+    "mask_token": true
+  },
+  "api": {
+    "host": "127.0.0.1",
+    "port": 0,
+    "allow_methods": ["GET"],
+    "healthz_without_auth": true,
+    "max_response_rows": 200,
+    "server_header": "StructuredDataApi/1.0"
+  }
+}

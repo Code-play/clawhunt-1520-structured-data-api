@@ -1,0 +1,156 @@
+{
+  "contract_version": "1.0.0",
+  "name": "clawhunt-1520-structured-data-api",
+  "dialect": "sqlite",
+  "read_only": true,
+  "notes": [
+    "本契约是双向白名单：请求只能引用模板 id，模板 SQL 只能引用 allowed_views，结果列只能落在模板 selectable_fields 内。",
+    "客户端不提交 SQL 文本；SQL 只存在于本配置文件，且在加载时与每次执行前都要通过语句白名单检查。",
+    "exposed_via_api=false 的模板只允许本地运维使用（benchmark_cross_join 用于验证超时防线）。"
+  ],
+  "allowed_views": [
+    "v_sales_enriched",
+    "v_sales_daily",
+    "v_category_revenue",
+    "v_channel_daily",
+    "v_segment_summary",
+    "v_product_rank"
+  ],
+  "templates": [
+    {
+      "id": "sales_by_region",
+      "title": "按地区汇总销售额",
+      "description": "指定日期区间内，按销售大区汇总订单数与销售额，可按地区、渠道过滤。",
+      "sql": "SELECT region,\n       SUM(orders) AS orders,\n       ROUND(SUM(revenue_cents) / 100.0, 2) AS revenue\nFROM v_sales_daily\nWHERE date_iso BETWEEN :date_from AND :date_to\n  AND (:region IS NULL OR region = :region)\n  AND (:channel IS NULL OR channel = :channel)\nGROUP BY region\nORDER BY revenue DESC, region ASC\nLIMIT :limit",
+      "purpose": "aggregate",
+      "exposed_via_api": true,
+      "max_rows": 50,
+      "timeout_ms": 800,
+      "params": [
+        {"name": "date_from", "required": true},
+        {"name": "date_to", "required": true},
+        {"name": "region", "required": false},
+        {"name": "channel", "required": false},
+        {"name": "limit", "required": false, "default": 20}
+      ],
+      "selectable_fields": ["region", "orders", "revenue"],
+      "views": ["v_sales_daily"]
+    },
+    {
+      "id": "daily_revenue",
+      "title": "按日营收趋势",
+      "description": "指定日期区间内逐日订单数与销售额，可按渠道过滤。",
+      "sql": "SELECT date_iso,\n       SUM(orders) AS orders,\n       ROUND(SUM(revenue_cents) / 100.0, 2) AS revenue\nFROM v_sales_daily\nWHERE date_iso BETWEEN :date_from AND :date_to\n  AND (:channel IS NULL OR channel = :channel)\nGROUP BY date_iso\nORDER BY date_iso ASC\nLIMIT :limit",
+      "purpose": "aggregate",
+      "exposed_via_api": true,
+      "max_rows": 120,
+      "timeout_ms": 800,
+      "params": [
+        {"name": "date_from", "required": true},
+        {"name": "date_to", "required": true},
+        {"name": "channel", "required": false},
+        {"name": "limit", "required": false, "default": 30}
+      ],
+      "selectable_fields": ["date_iso", "orders", "revenue"],
+      "views": ["v_sales_daily"]
+    },
+    {
+      "id": "category_share",
+      "title": "品类营收占比",
+      "description": "指定日期区间的品类营收与占比，占比以同一区间总营收为分母。",
+      "sql": "SELECT category,\n       SUM(orders) AS orders,\n       ROUND(SUM(revenue_cents) / 100.0, 2) AS revenue,\n       ROUND(100.0 * SUM(revenue_cents) / NULLIF((SELECT SUM(revenue_cents) FROM v_category_revenue WHERE date_iso BETWEEN :date_from AND :date_to), 0), 2) AS share_pct\nFROM v_category_revenue\nWHERE date_iso BETWEEN :date_from AND :date_to\nGROUP BY category\nORDER BY revenue DESC, category ASC\nLIMIT :limit",
+      "purpose": "aggregate",
+      "exposed_via_api": true,
+      "max_rows": 20,
+      "timeout_ms": 800,
+      "params": [
+        {"name": "date_from", "required": true},
+        {"name": "date_to", "required": true},
+        {"name": "limit", "required": false, "default": 10}
+      ],
+      "selectable_fields": ["category", "orders", "revenue", "share_pct"],
+      "views": ["v_category_revenue"]
+    },
+    {
+      "id": "channel_matrix",
+      "title": "地区 x 渠道矩阵",
+      "description": "指定日期区间内的地区与渠道交叉汇总，用于 OLAP 切片展示。",
+      "sql": "SELECT region,\n       channel,\n       SUM(orders) AS orders,\n       ROUND(SUM(revenue_cents) / 100.0, 2) AS revenue\nFROM v_sales_daily\nWHERE date_iso BETWEEN :date_from AND :date_to\nGROUP BY region, channel\nORDER BY region ASC, revenue DESC, channel ASC\nLIMIT :limit",
+      "purpose": "aggregate",
+      "exposed_via_api": true,
+      "max_rows": 40,
+      "timeout_ms": 800,
+      "params": [
+        {"name": "date_from", "required": true},
+        {"name": "date_to", "required": true},
+        {"name": "limit", "required": false, "default": 16}
+      ],
+      "selectable_fields": ["region", "channel", "orders", "revenue"],
+      "views": ["v_sales_daily"]
+    },
+    {
+      "id": "segment_summary",
+      "title": "客户分层汇总",
+      "description": "指定日期区间内按客户分层汇总订单与销售额。",
+      "sql": "SELECT segment,\n       SUM(orders) AS orders,\n       ROUND(SUM(revenue_cents) / 100.0, 2) AS revenue\nFROM v_segment_summary\nWHERE date_iso BETWEEN :date_from AND :date_to\nGROUP BY segment\nORDER BY revenue DESC, segment ASC\nLIMIT :limit",
+      "purpose": "aggregate",
+      "exposed_via_api": true,
+      "max_rows": 20,
+      "timeout_ms": 800,
+      "params": [
+        {"name": "date_from", "required": true},
+        {"name": "date_to", "required": true},
+        {"name": "limit", "required": false, "default": 10}
+      ],
+      "selectable_fields": ["segment", "orders", "revenue"],
+      "views": ["v_segment_summary"]
+    },
+    {
+      "id": "top_products",
+      "title": "畅销商品榜",
+      "description": "指定日期区间内按销售额排序的商品明细汇总。",
+      "sql": "SELECT product_name,\n       category,\n       SUM(quantity) AS units,\n       ROUND(SUM(revenue_cents) / 100.0, 2) AS revenue\nFROM v_product_rank\nWHERE date_iso BETWEEN :date_from AND :date_to\nGROUP BY product_name, category\nORDER BY revenue DESC, product_name ASC\nLIMIT :limit",
+      "purpose": "aggregate",
+      "exposed_via_api": true,
+      "max_rows": 50,
+      "timeout_ms": 800,
+      "params": [
+        {"name": "date_from", "required": true},
+        {"name": "date_to", "required": true},
+        {"name": "limit", "required": false, "default": 10}
+      ],
+      "selectable_fields": ["product_name", "category", "units", "revenue"],
+      "views": ["v_product_rank"]
+    },
+    {
+      "id": "sales_line_sample",
+      "title": "订单明细抽样",
+      "description": "明细类查询：SQL 不写 LIMIT，由第三层统一截断到请求上限并返回 truncated 标记。",
+      "sql": "SELECT sale_id,\n       date_iso,\n       region,\n       channel,\n       category,\n       quantity,\n       ROUND(amount_cents / 100.0, 2) AS amount\nFROM v_sales_enriched\nWHERE date_iso BETWEEN :date_from AND :date_to\nORDER BY sale_id ASC",
+      "purpose": "detail",
+      "exposed_via_api": true,
+      "max_rows": 100,
+      "timeout_ms": 800,
+      "params": [
+        {"name": "date_from", "required": true},
+        {"name": "date_to", "required": true},
+        {"name": "limit", "required": false, "default": 20}
+      ],
+      "selectable_fields": ["sale_id", "date_iso", "region", "channel", "category", "quantity", "amount"],
+      "views": ["v_sales_enriched"]
+    },
+    {
+      "id": "benchmark_cross_join",
+      "title": "超时防线基准查询（仅本地）",
+      "description": "自连接全量视图用于验证查询超时中断；不对外暴露，避免占用服务端资源。",
+      "sql": "SELECT COUNT(*) AS pairs\nFROM v_sales_enriched a, v_sales_enriched b",
+      "purpose": "timeout_probe",
+      "exposed_via_api": false,
+      "max_rows": 1,
+      "timeout_ms": 150,
+      "params": [],
+      "selectable_fields": ["pairs"],
+      "views": ["v_sales_enriched"]
+    }
+  ]
+}

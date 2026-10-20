@@ -1,0 +1,14 @@
+{"label": "健康检查（免鉴权）", "method": "GET", "path": "/healthz", "token_id": "-", "status": 200, "error_code": null, "rows": null, "allow_header": null, "retry_after": null}
+{"label": "字段白名单", "method": "GET", "path": "/v1/fields", "token_id": "demo-readonly-7f3a", "status": 200, "error_code": null, "rows": null, "allow_header": null, "retry_after": null}
+{"label": "模板列表", "method": "GET", "path": "/v1/queries", "token_id": "demo-readonly-7f3a", "status": 200, "error_code": null, "rows": null, "allow_header": null, "retry_after": null}
+{"label": "有效查询", "method": "GET", "path": "/v1/query", "token_id": "demo-readonly-7f3a", "status": 200, "error_code": null, "rows": 4, "allow_header": null, "retry_after": null}
+{"label": "明细截断（limit=5）", "method": "GET", "path": "/v1/query", "token_id": "demo-readonly-7f3a", "status": 200, "error_code": null, "rows": 5, "allow_header": null, "retry_after": null}
+{"label": "缺少令牌", "method": "GET", "path": "/v1/query", "token_id": "-", "status": 401, "error_code": "E_AUTH_MISSING_TOKEN", "rows": null, "allow_header": null, "retry_after": null}
+{"label": "令牌无效", "method": "GET", "path": "/v1/query", "token_id": "not-a-token", "status": 401, "error_code": "E_AUTH_INVALID_TOKEN", "rows": null, "allow_header": null, "retry_after": null}
+{"label": "方法不允许（POST）", "method": "POST", "path": "/v1/query", "token_id": "demo-readonly-7f3a", "status": 405, "error_code": "E_METHOD_NOT_ALLOWED", "rows": null, "allow_header": "GET", "retry_after": null}
+{"label": "scope 不足（audit-only 查数）", "method": "GET", "path": "/v1/query", "token_id": "demo-audit-2b91", "status": 403, "error_code": "E_SCOPE_DENIED", "rows": null, "allow_header": null, "retry_after": null}
+{"label": "审计尾部", "method": "GET", "path": "/v1/audit/tail", "token_id": "demo-readonly-7f3a", "status": 200, "error_code": null, "rows": null, "allow_header": null, "retry_after": null}
+{"label": "注入式参数", "method": "GET", "path": "/v1/query", "token_id": "demo-readonly-7f3a", "status": 400, "error_code": "E_PARAM_INJECTION", "rows": null, "allow_header": null, "retry_after": null}
+{"label": "越过模板字段", "method": "GET", "path": "/v1/query", "token_id": "demo-readonly-7f3a", "status": 400, "error_code": "E_PARAM_NOT_IN_TEMPLATE", "rows": null, "allow_header": null, "retry_after": null}
+{"label": "未知路径", "method": "GET", "path": "/v1/nope", "token_id": "demo-readonly-7f3a", "status": 404, "error_code": "E_NOT_FOUND", "rows": null, "allow_header": null, "retry_after": null}
+{"label": "限流（突发令牌第 6 次）", "method": "GET", "path": "/v1/query", "token_id": "demo-burst", "status": 429, "error_code": "E_RATE_LIMITED", "rows": null, "allow_header": null, "retry_after": "55"}

@@ -1,0 +1,491 @@
+{
+  "order": 1520,
+  "title": "结构化数据与实时接口",
+  "generated_at": "2026-10-20T15:57:15Z",
+  "python": "3.13.9",
+  "ok": true,
+  "assertions_passed": 93,
+  "assertions_total": 93,
+  "checks": [
+    {
+      "name": "Python 版本不低于 3.10",
+      "ok": true,
+      "detail": "3.13.9"
+    },
+    {
+      "name": "必备文件全部存在",
+      "ok": true,
+      "detail": "25 个必备文件齐全"
+    },
+    {
+      "name": "目录与文件名全 ASCII",
+      "ok": true,
+      "detail": "扫描 16 个 py 文件所在目录树，路径全 ASCII"
+    },
+    {
+      "name": "所有文本文件无 BOM",
+      "ok": true,
+      "detail": "38 个文本文件均为无 BOM UTF-8"
+    },
+    {
+      "name": "文档与代码不含 emoji",
+      "ok": true,
+      "detail": "未检出 emoji / 装饰性符号"
+    },
+    {
+      "name": "零第三方依赖（AST 扫描导入）",
+      "ok": true,
+      "detail": "16 个模块仅使用标准库"
+    },
+    {
+      "name": "仓库内无第三方依赖痕迹",
+      "ok": true,
+      "detail": "无 requirements.txt / vendor / site-packages"
+    },
+    {
+      "name": "契约与字段数量符合设计",
+      "ok": true,
+      "detail": "模板 8 个 / 对外 7 个 / 视图 6 个 / 字段 7 个 / 输出列 14 个"
+    },
+    {
+      "name": "硬上限与默认行数自洽",
+      "ok": true,
+      "detail": "hard=200 default=20"
+    },
+    {
+      "name": "只读方法白名单仅 GET",
+      "ok": true,
+      "detail": "('GET',)"
+    },
+    {
+      "name": "模板视图均在白名单内",
+      "ok": true,
+      "detail": "8 个模板引用的视图全部在白名单内"
+    },
+    {
+      "name": "模板输出列均在白名单内",
+      "ok": true,
+      "detail": "8 个模板的输出列均已登记"
+    },
+    {
+      "name": "演示令牌结构合法",
+      "ok": true,
+      "detail": "4 个令牌，scope 合法，掩码不泄漏明文"
+    },
+    {
+      "name": "装载期拒绝 POST 方法",
+      "ok": true,
+      "detail": "ConfigError: allow_methods"
+    },
+    {
+      "name": "装载期拒绝超过硬上限的行数",
+      "ok": true,
+      "detail": "ConfigError: max_rows_hard"
+    },
+    {
+      "name": "装载期拒绝视图漂移",
+      "ok": true,
+      "detail": "ConfigError: v_product_rank"
+    },
+    {
+      "name": "demo 子进程退出码为 0",
+      "ok": true,
+      "detail": "exit=0 输出 8153 字符"
+    },
+    {
+      "name": "demo 输出覆盖四段验收内容",
+      "ok": true,
+      "detail": "4 个主体段落 + 结论齐全"
+    },
+    {
+      "name": "out/ 七个产物齐全",
+      "ok": true,
+      "detail": "contract_openapi.json=28721B, query_results.jsonl=5594B, rejected_requests.jsonl=8384B, audit_log.jsonl=20557B, layer_evidence.jsonl=6796B, http_calls.jsonl=2844B, demo_run.log=10608B"
+    },
+    {
+      "name": "取证条目分布 L1=9 / L2=8 / L3=3",
+      "ok": true,
+      "detail": "L1=9 L2=8 L3=3 合计=20"
+    },
+    {
+      "name": "L1 九条取证全部拦截写入",
+      "ok": true,
+      "detail": "三种机制共 9 条证据全部 blocked=true"
+    },
+    {
+      "name": "L1 拦截后事实表行数不变",
+      "ok": true,
+      "detail": "无行数变化告警条目，事实表保持 4000 行"
+    },
+    {
+      "name": "L2 白名单分类正确",
+      "ok": true,
+      "detail": "放行 2 条、拒绝 6 条，覆盖 4 类错误码"
+    },
+    {
+      "name": "L3 行数与超时证据完整",
+      "ok": true,
+      "detail": "行截断 5 行、数量上限 E_ROW_LIMIT、超时中断且连接可复用"
+    },
+    {
+      "name": "样例 35 条且结果分布 10 成功 / 25 拒绝",
+      "ok": true,
+      "detail": "samples=35 results=10 rejected=25"
+    },
+    {
+      "name": "样例期望与实际结果零不符",
+      "ok": true,
+      "detail": "35 条样例的期望状态与错误码逐条吻合"
+    },
+    {
+      "name": "查询结果列受输出白名单约束",
+      "ok": true,
+      "detail": "10 条成功结果仅含登记列"
+    },
+    {
+      "name": "拒绝记录字段完整",
+      "ok": true,
+      "detail": "25 条拒绝均带 code/status/message/layer，覆盖 15 类错误"
+    },
+    {
+      "name": "审计日志序号连续且双来源",
+      "ok": true,
+      "detail": "46 条（成功 21 / 拒绝 25）"
+    },
+    {
+      "name": "审计日志不存明文令牌",
+      "ok": true,
+      "detail": "明文令牌未落盘，token_id 取值均来自配置"
+    },
+    {
+      "name": "HTTP 调用与审计可关联",
+      "ok": true,
+      "detail": "14 次 HTTP 调用全部可关联到审计路径"
+    },
+    {
+      "name": "OpenAPI 契约只读且含三层声明",
+      "ok": true,
+      "detail": "7 个路径全部仅 GET，三层防线已写入 x-guard-layers"
+    },
+    {
+      "name": "落盘契约可重复生成",
+      "ok": true,
+      "detail": "落盘契约与 build_spec 输出逐字段一致"
+    },
+    {
+      "name": "连续两次 demo 产物逐字节一致",
+      "ok": true,
+      "detail": "6 个产物哈希相同"
+    },
+    {
+      "name": "demo_run.log 与运行一致",
+      "ok": true,
+      "detail": "demo_run.log 8153 字符，含零不符结论"
+    },
+    {
+      "name": "测试子进程退出码为 0",
+      "ok": true,
+      "detail": "exit=0"
+    },
+    {
+      "name": "测试全部通过且规模达标",
+      "ok": true,
+      "detail": "86/86 tests passed"
+    },
+    {
+      "name": "L1-a 只读 URI 独立拦截",
+      "ok": true,
+      "detail": "mode=ro 拒绝 4 类写操作，行数仍 4000"
+    },
+    {
+      "name": "L1-b query_only 独立拦截",
+      "ok": true,
+      "detail": "PRAGMA query_only=ON 拒绝 INSERT"
+    },
+    {
+      "name": "L1-c authorizer 独立拦截",
+      "ok": true,
+      "detail": "set_authorizer 拒绝 4 类写操作，行数仍 4000"
+    },
+    {
+      "name": "L2 语句白名单独立判定",
+      "ok": true,
+      "detail": "6 类语句定性正确，全程未连接数据库"
+    },
+    {
+      "name": "L3 行数截断独立生效",
+      "ok": true,
+      "detail": "SQL 不含 LIMIT，仍被截到 7 行"
+    },
+    {
+      "name": "L3 超时中断独立生效",
+      "ok": true,
+      "detail": "151ms 内中断，连接仍可用"
+    },
+    {
+      "name": "L1 不依赖 L2",
+      "ok": true,
+      "detail": "未装语句检查器，authorizer 仍拒绝 DELETE"
+    },
+    {
+      "name": "L2 不依赖 L1",
+      "ok": true,
+      "detail": "无数据库连接也能拒绝 PRAGMA"
+    },
+    {
+      "name": "缺少 template",
+      "ok": true,
+      "detail": "E_PARAM_MISSING"
+    },
+    {
+      "name": "未知模板",
+      "ok": true,
+      "detail": "E_TEMPLATE_UNKNOWN"
+    },
+    {
+      "name": "未知顶层键（试图提交 SQL）",
+      "ok": true,
+      "detail": "E_PARAM_UNKNOWN"
+    },
+    {
+      "name": "未知参数名",
+      "ok": true,
+      "detail": "E_PARAM_UNKNOWN"
+    },
+    {
+      "name": "参数不属于该模板",
+      "ok": true,
+      "detail": "E_PARAM_NOT_IN_TEMPLATE"
+    },
+    {
+      "name": "注入式输入：分号拼接",
+      "ok": true,
+      "detail": "E_PARAM_INJECTION"
+    },
+    {
+      "name": "注入式输入：单行注释",
+      "ok": true,
+      "detail": "E_PARAM_INJECTION"
+    },
+    {
+      "name": "注入式输入：块注释",
+      "ok": true,
+      "detail": "E_PARAM_INJECTION"
+    },
+    {
+      "name": "注入式输入：引号闭合",
+      "ok": true,
+      "detail": "E_PARAM_INJECTION"
+    },
+    {
+      "name": "注入式输入：关键字序列",
+      "ok": true,
+      "detail": "E_PARAM_INJECTION"
+    },
+    {
+      "name": "枚举外取值",
+      "ok": true,
+      "detail": "E_PARAM_ENUM"
+    },
+    {
+      "name": "日期顺序颠倒",
+      "ok": true,
+      "detail": "E_PARAM_RANGE"
+    },
+    {
+      "name": "日期越过下界",
+      "ok": true,
+      "detail": "E_PARAM_RANGE"
+    },
+    {
+      "name": "字符串超长",
+      "ok": true,
+      "detail": "E_PARAM_LENGTH"
+    },
+    {
+      "name": "整数参数传字符串",
+      "ok": true,
+      "detail": "E_PARAM_TYPE"
+    },
+    {
+      "name": "布尔值不算整数",
+      "ok": true,
+      "detail": "E_PARAM_TYPE"
+    },
+    {
+      "name": "日期格式错误",
+      "ok": true,
+      "detail": "E_PARAM_TYPE"
+    },
+    {
+      "name": "limit 超过模板上限",
+      "ok": true,
+      "detail": "E_ROW_LIMIT"
+    },
+    {
+      "name": "合法请求返回真实数据",
+      "ok": true,
+      "detail": "4 行，limit=20，truncated=false"
+    },
+    {
+      "name": "明细查询按需截断",
+      "ok": true,
+      "detail": "limit=5 返回 5 行且 truncated=true"
+    },
+    {
+      "name": "错误信息可读且指明字段",
+      "ok": true,
+      "detail": "错误体含字段名与可选值，无堆栈"
+    },
+    {
+      "name": "GET /healthz 免鉴权可用",
+      "ok": true,
+      "detail": "免鉴权健康检查 200 且声明 read_only"
+    },
+    {
+      "name": "GET /v1/contract 需要 query scope",
+      "ok": true,
+      "detail": "返回契约版本与三层说明"
+    },
+    {
+      "name": "GET /v1/fields",
+      "ok": true,
+      "detail": "7 个字段元数据"
+    },
+    {
+      "name": "GET /v1/queries",
+      "ok": true,
+      "detail": "7 个对外模板（benchmark 不暴露）"
+    },
+    {
+      "name": "GET /v1/query 正常返回",
+      "ok": true,
+      "detail": "URL 参数经类型转换后返回 4 行"
+    },
+    {
+      "name": "GET /v1/query 明细截断",
+      "ok": true,
+      "detail": "limit=5 触发第三层截断"
+    },
+    {
+      "name": "缺少令牌被拒",
+      "ok": true,
+      "detail": "401 + E_AUTH_MISSING_TOKEN"
+    },
+    {
+      "name": "无效令牌被拒",
+      "ok": true,
+      "detail": "401 + E_AUTH_INVALID_TOKEN"
+    },
+    {
+      "name": "写方法一律 405",
+      "ok": true,
+      "detail": "405 + Allow: GET"
+    },
+    {
+      "name": "scope 隔离：audit 令牌不能查数",
+      "ok": true,
+      "detail": "audit-only 令牌查数被 403"
+    },
+    {
+      "name": "GET /v1/audit/tail 正常",
+      "ok": true,
+      "detail": "返回最近 3 条，序号递增"
+    },
+    {
+      "name": "scope 隔离：query 令牌不能读审计",
+      "ok": true,
+      "detail": "query-only 令牌读审计被 403"
+    },
+    {
+      "name": "未知路径 404",
+      "ok": true,
+      "detail": "404 + E_NOT_FOUND"
+    },
+    {
+      "name": "URL 注入式参数被拒",
+      "ok": true,
+      "detail": "400 + E_PARAM_INJECTION"
+    },
+    {
+      "name": "越过模板字段被拒",
+      "ok": true,
+      "detail": "400 + E_PARAM_NOT_IN_TEMPLATE"
+    },
+    {
+      "name": "滑动窗口限流 60s/5 次",
+      "ok": true,
+      "detail": "前 5 次 200，第 6 次 429（Retry-After=60s）"
+    },
+    {
+      "name": "GET /v1/openapi.json",
+      "ok": true,
+      "detail": "在线契约与落盘契约同类"
+    },
+    {
+      "name": "每次 HTTP 调用都有对应审计",
+      "ok": true,
+      "detail": "22 次请求逐条入审计且状态一致"
+    },
+    {
+      "name": "HTTP 审计不存明文令牌",
+      "ok": true,
+      "detail": "只记录 token_id，明文令牌未进入审计"
+    },
+    {
+      "name": "审计尾部实时可见",
+      "ok": true,
+      "detail": "尾部 5 条包含刚发生的请求"
+    },
+    {
+      "name": "服务关闭后端口释放",
+      "ok": true,
+      "detail": "端口可再次绑定"
+    },
+    {
+      "name": "SOLUTION.md 篇幅达标",
+      "ok": true,
+      "detail": "8565 字符（要求 8000-9800）"
+    },
+    {
+      "name": "SOLUTION.md 覆盖验收要点",
+      "ok": true,
+      "detail": "覆盖三层防线/校验/契约/审计/复现，含两处链接占位"
+    },
+    {
+      "name": "README.md 提供三步复跑命令",
+      "ok": true,
+      "detail": "三步：demo / tests / verify 均给出命令"
+    },
+    {
+      "name": "DELIVERY.md 列出交付清单",
+      "ok": true,
+      "detail": "清单覆盖产物/证据/验证目录"
+    },
+    {
+      "name": ".gitignore 规则可用",
+      "ok": true,
+      "detail": "__pycache__ 与字节码已忽略"
+    },
+    {
+      "name": "交付物无未完成标记",
+      "ok": true,
+      "detail": "无 TODO/FIXME/占位标记"
+    }
+  ],
+  "artifacts": {
+    "contract_openapi.json": "f4529e09a82382d3cc6a442eaa6dbe8fc114d855e429211491ba7e83f88aa14d",
+    "query_results.jsonl": "70edac7513b5e452db7d8b1586b9d9f1837367c7e001413cb4ea2387bef07d9d",
+    "rejected_requests.jsonl": "38715943091c6148eea8b5cf1b4c614f6619709df126ac75330c927ef78a8fee",
+    "audit_log.jsonl": "4e9070e7af854615e3869186b2cf987a57b8bf5b3b3074c1ce6c4d792d251f81",
+    "layer_evidence.jsonl": "d571c7c25045ae4b2343bd890b7066bb57abc9a4592c889e38604d5aca8054c3",
+    "http_calls.jsonl": "d996b26d4a0ca10f9fd52e9924bd395d499c25fc21badf1e3cf531240ccab30d",
+    "demo_run.log": null
+  },
+  "http_calls": 23,
+  "samples": {
+    "total": 35,
+    "valid": 10,
+    "rejected": 25
+  }
+}
